@@ -1,0 +1,52 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="StoreZip.App.App"
+             RequestedThemeVariant="Dark">
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <SolidColorBrush x:Key="AppContentBackground" Color="#1B1C20"/>
+            <SolidColorBrush x:Key="AppCardBackground" Color="#24252B"/>
+            <SolidColorBrush x:Key="AppBorderBrush" Color="#36373F"/>
+            <SolidColorBrush x:Key="AppSubtleTextBrush" Color="#959AA3"/>
+            <SolidColorBrush x:Key="AppLogBackground" Color="#16171A"/>
+            <SolidColorBrush x:Key="DropBrush" Color="#10B981"/>
+            <SolidColorBrush x:Key="OkBrush" Color="#5BC46B"/>
+            <SolidColorBrush x:Key="ErrorBrush" Color="#F0646B"/>
+        </ResourceDictionary>
+    </Application.Resources>
+
+    <Application.Styles>
+        <FluentTheme DensityStyle="Compact"/>
+        <Style Selector="Window">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Background" Value="{DynamicResource AppContentBackground}"/>
+        </Style>
+        <Style Selector="TextBox">
+            <Setter Property="MinHeight" Value="22"/>
+            <Setter Property="Padding" Value="5,2"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+        <Style Selector="Button">
+            <Setter Property="MinHeight" Value="22"/>
+            <Setter Property="Padding" Value="9,2"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+        <Style Selector="CheckBox">
+            <Setter Property="MinHeight" Value="0"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+        <Style Selector="CheckBox /template/ Grid#RootGrid > Grid">
+            <Setter Property="Height" Value="24"/>
+        </Style>
+        <Style Selector="ListBoxItem">
+            <Setter Property="MinHeight" Value="0"/>
+            <Setter Property="Padding" Value="6,1"/>
+        </Style>
+        <Style Selector="TextBlock.subtle">
+            <Setter Property="Foreground" Value="{DynamicResource AppSubtleTextBrush}"/>
+        </Style>
+    </Application.Styles>
+
+</Application>

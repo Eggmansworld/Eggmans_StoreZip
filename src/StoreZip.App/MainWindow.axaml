@@ -1,0 +1,60 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="using:StoreZip.App"
+        x:Class="StoreZip.App.MainWindow"
+        Title="Eggman's StoreZip"
+        Width="820" Height="560" MinWidth="560" MinHeight="380"
+        DragDrop.AllowDrop="True">
+
+    <DockPanel Margin="12,10">
+        <StackPanel DockPanel.Dock="Top" Spacing="6">
+            <TextBlock Text="Eggman's StoreZip" FontSize="16" FontWeight="SemiBold"/>
+            <TextBlock Classes="subtle" TextWrapping="Wrap"
+                       Text="Turns MAME set zips into StoreZips: every file stored (no compression), sorted, with fixed dates and nothing else in the zip, so the same ROMs always give the same file and hashes on any computer. Use Pleasuredome's MAME merged sets of the version the dat names (BIOS and device zips as they come). Drop zips or folders below; the StoreZips go to the output folder, ready for a RomVault ToSort."/>
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto" Margin="0,4,0,0">
+                <TextBlock Grid.Column="0" Text="Output folder" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <TextBox Grid.Column="1" x:Name="OutputBox" Watermark="Where the StoreZips go"/>
+                <Button Grid.Column="2" Content="Browse…" Click="Browse_Click" Margin="6,0,0,0"/>
+                <Button Grid.Column="3" Content="Open" Click="Open_Click" Margin="6,0,0,0"/>
+            </Grid>
+            <CheckBox x:Name="RenameBox" IsChecked="True"
+                      Content="Rename .zip to .zip__ (recommended: RomVault then treats each one as a plain file and never looks inside)"/>
+            <Panel Height="110" Margin="0,4,0,0">
+                <Rectangle x:Name="DropRect" Stroke="{DynamicResource AppBorderBrush}" StrokeThickness="2" StrokeDashArray="4,3"
+                           RadiusX="6" RadiusY="6" Fill="{DynamicResource AppCardBackground}"/>
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
+                    <TextBlock Text="Drop MAME zips or folders here" FontSize="14" HorizontalAlignment="Center"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="6">
+                        <Button Content="Add zips…" Click="AddFiles_Click"/>
+                        <Button Content="Add folder…" Click="AddFolder_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </Panel>
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock x:Name="StatusText" Classes="subtle" Text="Ready." VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                <ProgressBar Grid.Column="1" x:Name="Progress" Width="220" Minimum="0" Maximum="1" IsVisible="False"/>
+            </Grid>
+        </StackPanel>
+
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="6" Margin="0,6,0,0">
+            <Button Content="Copy results" Click="Copy_Click"/>
+            <Button Content="Clear" Click="Clear_Click" x:Name="ClearButton"/>
+            <Button Content="Cancel" Click="Cancel_Click" x:Name="CancelButton" IsEnabled="False"/>
+        </StackPanel>
+
+        <Border Margin="0,6,0,0" Background="{DynamicResource AppLogBackground}" BorderBrush="{DynamicResource AppBorderBrush}"
+                BorderThickness="1" CornerRadius="4">
+            <ListBox x:Name="Results" Background="Transparent">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="app:ResultRow">
+                        <Grid ColumnDefinitions="18,*">
+                            <TextBlock Text="{Binding Mark}" Foreground="{Binding Brush}"/>
+                            <SelectableTextBlock Grid.Column="1" Text="{Binding Text}" TextWrapping="Wrap"
+                                                 FontFamily="Consolas,Menlo,DejaVu Sans Mono,monospace"/>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
+    </DockPanel>
+</Window>

@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+        <AssemblyName>EggmansStoreZip</AssemblyName>
+        <RootNamespace>StoreZip.App</RootNamespace>
+        <Version>1.0.1</Version>
+        <Authors>Eggman</Authors>
+        <Product>Eggman's StoreZip</Product>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Avalonia" Version="11.3.2" />
+        <PackageReference Include="Avalonia.Desktop" Version="11.3.2" />
+        <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.2" />
+        <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.2" />
+        <!-- Explicit bump: Avalonia 11.3.2 pulls Tmds.DBus.Protocol 0.21.2 which has GHSA-xrw6-gwf8-vvr9 -->
+        <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\StoreZip.Core\StoreZip.Core.csproj" />
+    </ItemGroup>
+
+</Project>

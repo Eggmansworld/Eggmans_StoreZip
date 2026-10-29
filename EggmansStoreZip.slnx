@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/StoreZip.App/StoreZip.App.csproj" />
+    <Project Path="src/StoreZip.Core/StoreZip.Core.csproj" />
+  </Folder>
+</Solution>

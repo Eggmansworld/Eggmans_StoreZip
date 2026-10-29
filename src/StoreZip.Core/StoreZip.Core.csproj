@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <LangVersion>latest</LangVersion>
+        <RootNamespace>StoreZip</RootNamespace>
+        <Authors>Eggman</Authors>
+        <Product>Eggman's StoreZip</Product>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="ZstdSharp.Port" Version="0.8.5" />
+        <PackageReference Include="System.IO.Hashing" Version="9.0.0" />
+    </ItemGroup>
+
+</Project>
