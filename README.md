@@ -33,6 +33,10 @@ The source zips can be any normal zip: TorrentZip, RomVault's ZSTD, 7-Zip, Info-
 
 RomVault must treat nested zips as plain files, not open them as sets. Written as `name.zip_`, RomVault doesn't recognise the extension and only hashes the file as a whole. Fix matches it to the dat by hash and gives it its proper `.zip` name inside the game zip. Leave this on unless you're using a "FileOnly" ToSort.
 
+### Workers (2 by default)
+
+How many zips are converted at the same time. 2 suits most PCs. Use 1 when the zips are on a NAS or a slow hard drive, or more on a fast SSD. The output is the same whatever the setting.
+
 ## First run
 
 - **Windows:** run `EggmansStoreZip.exe`. SmartScreen may warn about an unknown publisher: choose **More info**, then **Run anyway**.
@@ -44,7 +48,7 @@ RomVault must treat nested zips as plain files, not open them as sets. Written a
   codesign --force --deep -s - "/Applications/Eggman's StoreZip.app"
   ```
 
-Settings (the output folder and the `.zip_` option) are remembered in your user settings folder.
+Settings (the output folder, the `.zip_` option and Workers) are remembered in your user settings folder.
 
 ## Building from source
 

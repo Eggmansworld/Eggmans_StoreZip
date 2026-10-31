@@ -32,6 +32,12 @@ the file as a whole, which is exactly what's needed. Fix matches it to the dat
 by hash and gives it its proper .zip name inside the game zip. Leave this on
 unless you know you're using a "FileOnly" ToSort.
 
+WORKERS (2 BY DEFAULT)
+
+How many zips are converted at the same time. 2 suits most PCs. Use 1 when
+the zips are on a NAS or a slow hard drive, or more on a fast SSD. The output
+is the same whatever the setting.
+
 FIRST RUN
 
 Windows: run EggmansStoreZip.exe. Windows SmartScreen may warn about an
@@ -47,5 +53,5 @@ macOS: extract the tar.gz and move "Eggman's StoreZip.app" to Applications.
 
   Then open it normally.
 
-Settings (output folder, the .zip_ option) are remembered in your user
-settings folder. StoreZip-Format.md, included here, is the exact format.
+Settings (output folder, the .zip_ option, Workers) are remembered in your
+user settings folder. StoreZip-Format.md, included here, is the exact format.

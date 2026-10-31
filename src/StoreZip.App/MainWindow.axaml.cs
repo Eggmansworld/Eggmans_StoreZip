@@ -11,14 +11,17 @@ namespace StoreZip.App;
 public sealed record ResultRow(string Mark, IBrush? Brush, string Text);
 
 /// <summary>
-/// Drop zips or folders → each zip is converted, one at a time, into the
-/// output folder. Drops while a run is going are queued behind it.
+/// Drop zips or folders → the zips are converted into the output folder,
+/// several at a time (Workers). Drops while a run is going are queued behind it.
 /// </summary>
 public partial class MainWindow : Window
 {
     private readonly Settings _settings = Settings.Load();
     private readonly ObservableCollection<ResultRow> _rows = [];
     private readonly Queue<string> _queue = new();
+    // Worker loops resume on the UI thread, so these need no locking
+    private readonly List<string> _active = [];
+    private readonly HashSet<string> _outputs = new(StringComparer.OrdinalIgnoreCase);
     private CancellationTokenSource? _cancel;
     private bool _running;
     private int _done, _total, _failed;
@@ -28,6 +31,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         OutputBox.Text = _settings.OutputFolder;
         RenameBox.IsChecked = _settings.RenameExtension;
+        WorkersBox.Value = Math.Clamp(_settings.Workers, 1, 16);
         Results.ItemsSource = _rows;
         AddHandler(DragDrop.DragOverEvent, OnDragOver);
         AddHandler(DragDrop.DragLeaveEvent, (_, _) => DropRect.Stroke = Brush("AppBorderBrush"));
@@ -41,6 +45,7 @@ public partial class MainWindow : Window
     {
         _settings.OutputFolder = OutputBox.Text?.Trim() ?? "";
         _settings.RenameExtension = RenameBox.IsChecked == true;
+        _settings.Workers = (int)Math.Clamp(WorkersBox.Value ?? 2, 1, 16);
         _settings.Save();
     }
 
@@ -132,28 +137,40 @@ public partial class MainWindow : Window
         SaveSettings();
         string output = _settings.OutputFolder;
         bool rename = _settings.RenameExtension;
-        try
+        var token = _cancel.Token;
+
+        // Each worker takes the next zip off the queue, so drops during the run join in
+        async Task Worker()
         {
             while (_queue.Count > 0)
             {
+                token.ThrowIfCancellationRequested();
                 string source = _queue.Dequeue();
-                StatusText.Text = $"Converting {_done + 1} of {_total}: {Path.GetFileName(source)}";
-                Progress.Value = (double)_done / Math.Max(1, _total);
-                var token = _cancel.Token;
-                var r = await Task.Run(() => StoreZipJob.ConvertOne(source, output, rename, token), token);
-                _done++;
-                if (r.Error is null)
+                string target = StoreZipJob.OutputPath(source, output, rename);
+                if (!_outputs.Add(target))
                 {
-                    _rows.Add(new ResultRow("✓", Brush("OkBrush"),
-                        $"{Path.GetFileName(r.Output)}  {r.Result!.Members.Count} files  {r.Result.Size:N0} bytes  crc {r.Result.CrcHex}  sha1 {r.Result.Sha1}"));
+                    // Two sources with the same name would write the same file
+                    Finish(source, new StoreZipJobResult(source, target, null,
+                        $"another zip in this run already writes {Path.GetFileName(target)} — skipped"));
+                    continue;
                 }
-                else
+                _active.Add(Path.GetFileName(source));
+                ShowStatus();
+                try
                 {
-                    _failed++;
-                    _rows.Add(new ResultRow("✗", Brush("ErrorBrush"), $"{Path.GetFileName(source)}: {r.Error}"));
+                    Finish(source, await Task.Run(() => StoreZipJob.ConvertOne(source, output, rename, token), token));
                 }
-                Results.ScrollIntoView(_rows.Count - 1);
+                finally
+                {
+                    _active.Remove(Path.GetFileName(source));
+                }
             }
+        }
+
+        try
+        {
+            int workers = Math.Clamp(_settings.Workers, 1, 16);
+            await Task.WhenAll(Enumerable.Range(0, workers).Select(_ => Worker()));
             StatusText.Text = $"Done: {_done - _failed} of {_done} converted" + (_failed > 0 ? $", {_failed} failed." : ".") + $"  Output: {output}";
         }
         catch (OperationCanceledException)
@@ -168,7 +185,32 @@ public partial class MainWindow : Window
             ClearButton.IsEnabled = true;
             _running = false;
             _done = _total = _failed = 0;
+            _active.Clear();
+            _outputs.Clear();
         }
+    }
+
+    private void ShowStatus()
+    {
+        StatusText.Text = $"Converting ({_done} of {_total} done): {string.Join(", ", _active)}";
+        Progress.Value = (double)_done / Math.Max(1, _total);
+    }
+
+    private void Finish(string source, StoreZipJobResult r)
+    {
+        _done++;
+        if (r.Error is null)
+        {
+            _rows.Add(new ResultRow("✓", Brush("OkBrush"),
+                $"{Path.GetFileName(r.Output)}  {r.Result!.Members.Count} files  {r.Result.Size:N0} bytes  crc {r.Result.CrcHex}  sha1 {r.Result.Sha1}"));
+        }
+        else
+        {
+            _failed++;
+            _rows.Add(new ResultRow("✗", Brush("ErrorBrush"), $"{Path.GetFileName(source)}: {r.Error}"));
+        }
+        Results.ScrollIntoView(_rows.Count - 1);
+        ShowStatus();
     }
 
     private void Cancel_Click(object? sender, RoutedEventArgs e) => _cancel?.Cancel();

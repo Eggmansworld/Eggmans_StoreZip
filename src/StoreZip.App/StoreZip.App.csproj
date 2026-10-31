@@ -9,7 +9,7 @@
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
         <AssemblyName>EggmansStoreZip</AssemblyName>
         <RootNamespace>StoreZip.App</RootNamespace>
-        <Version>1.0.1</Version>
+        <Version>1.1.0</Version>
         <Authors>Eggman</Authors>
         <Product>Eggman's StoreZip</Product>
     </PropertyGroup>
