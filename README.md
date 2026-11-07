@@ -53,6 +53,16 @@ RomVault must treat nested zips as plain files, not open them as sets. Written a
 
 How many zips are converted at the same time. 2 suits most PCs. Use 1 when the zips are on a NAS or a slow hard drive, or more on a fast SSD. The output is the same whatever the setting.
 
+### Convert in place
+
+Tick **Convert in place** to rebuild an existing folder of zips where it is, for example after RomVault has rebuilt it. Drop the folder: every `.zip` and `.zip_` in it and its subfolders is replaced by its StoreZip, keeping the same name and folder. There's no output folder, and the `.zip_` option doesn't apply. The app asks before it starts and says how many zips it will replace.
+
+It's safe to run on files you care about:
+
+- Each StoreZip is written beside its zip and read back before the zip is replaced.
+- A damaged zip (one whose data doesn't match its CRCs) or an unreadable one is reported and kept as it was.
+- A zip that already is a StoreZip is left alone, so running it again changes nothing.
+
 ## First run
 
 - **Windows:** run `EggmansStoreZip.exe`. SmartScreen may warn about an unknown publisher: choose **More info**, then **Run anyway**.
@@ -64,7 +74,7 @@ How many zips are converted at the same time. 2 suits most PCs. Use 1 when the z
   codesign --force --deep -s - "/Applications/Eggman's StoreZip.app"
   ```
 
-Settings (the output folder, the `.zip_` option and Workers) are remembered in your user settings folder.
+Settings (the output folder, the `.zip_` option, Workers and Convert in place) are remembered in your user settings folder.
 
 ## Building from source
 

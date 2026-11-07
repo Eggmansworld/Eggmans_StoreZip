@@ -9,6 +9,8 @@ public sealed class Settings
     public bool RenameExtension { get; set; } = true;
     /// <summary>Zips converted at the same time.</summary>
     public int Workers { get; set; } = 2;
+    /// <summary>Replace each zip with its StoreZip where it is, instead of writing to the output folder.</summary>
+    public bool InPlace { get; set; }
 
     private static string PathOf => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "EggmansStoreZip", "settings.json");

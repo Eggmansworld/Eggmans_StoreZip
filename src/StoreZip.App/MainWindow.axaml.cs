@@ -24,13 +24,14 @@ public partial class MainWindow : Window
     private readonly HashSet<string> _outputs = new(StringComparer.OrdinalIgnoreCase);
     private CancellationTokenSource? _cancel;
     private bool _running;
-    private int _done, _total, _failed;
+    private int _done, _total, _failed, _unchanged;
 
     public MainWindow()
     {
         InitializeComponent();
         OutputBox.Text = _settings.OutputFolder;
         RenameBox.IsChecked = _settings.RenameExtension;
+        InPlaceBox.IsChecked = _settings.InPlace;
         WorkersBox.Value = Math.Clamp(_settings.Workers, 1, 16);
         Results.ItemsSource = _rows;
         AddHandler(DragDrop.DragOverEvent, OnDragOver);
@@ -45,6 +46,7 @@ public partial class MainWindow : Window
     {
         _settings.OutputFolder = OutputBox.Text?.Trim() ?? "";
         _settings.RenameExtension = RenameBox.IsChecked == true;
+        _settings.InPlace = InPlaceBox.IsChecked == true;
         _settings.Workers = (int)Math.Clamp(WorkersBox.Value ?? 2, 1, 16);
         _settings.Save();
     }
@@ -84,6 +86,38 @@ public partial class MainWindow : Window
 
     private async void Browse_Click(object? sender, RoutedEventArgs e) => await PickOutputAsync();
 
+    // In place has no output folder and keeps every name, so those settings don't apply
+    private void InPlace_Changed(object? sender, RoutedEventArgs e)
+    {
+        bool inPlace = InPlaceBox.IsChecked == true;
+        OutputRow.IsEnabled = !inPlace;
+        RenameBox.IsEnabled = !inPlace;
+    }
+
+    private async Task<bool> ConfirmAsync(string title, string text)
+    {
+        var dialog = new Window
+        {
+            Title = title, Width = 480, SizeToContent = SizeToContent.Height, CanResize = false,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+        };
+        var yes = new Button { Content = "Replace them", IsDefault = true };
+        var no = new Button { Content = "Cancel", IsCancel = true };
+        yes.Click += (_, _) => dialog.Close(true);
+        no.Click += (_, _) => dialog.Close(false);
+        dialog.Content = new StackPanel
+        {
+            Margin = new Avalonia.Thickness(16), Spacing = 12,
+            Children =
+            {
+                new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap },
+                new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 8,
+                                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right, Children = { yes, no } },
+            },
+        };
+        return await dialog.ShowDialog<bool>(this);
+    }
+
     private async Task<bool> PickOutputAsync()
     {
         var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions { Title = "Select the output folder for the StoreZips" });
@@ -107,7 +141,8 @@ public partial class MainWindow : Window
         var inputs = paths.ToList();
         if (inputs.Count == 0)
             return;
-        if (string.IsNullOrWhiteSpace(OutputBox.Text) && !await PickOutputAsync())
+        bool inPlace = InPlaceBox.IsChecked == true;
+        if (!inPlace && string.IsNullOrWhiteSpace(OutputBox.Text) && !await PickOutputAsync())
         {
             StatusText.Text = "Pick an output folder first.";
             return;
@@ -118,6 +153,14 @@ public partial class MainWindow : Window
         if (files.Count == 0)
         {
             StatusText.Text = "No zips found in what was added.";
+            return;
+        }
+        if (inPlace && !await ConfirmAsync("Convert in place",
+                $"Replace {files.Count:N0} zip(s) with their StoreZips, where they are?\n\n" +
+                "Each keeps its name and folder. Zips that already are StoreZips are left alone, and if a zip can't be " +
+                "converted it is kept as it was."))
+        {
+            StatusText.Text = "Nothing was changed.";
             return;
         }
         foreach (string f in files)
@@ -137,6 +180,7 @@ public partial class MainWindow : Window
         SaveSettings();
         string output = _settings.OutputFolder;
         bool rename = _settings.RenameExtension;
+        bool inPlace = _settings.InPlace;
         var token = _cancel.Token;
 
         // Each worker takes the next zip off the queue, so drops during the run join in
@@ -146,7 +190,7 @@ public partial class MainWindow : Window
             {
                 token.ThrowIfCancellationRequested();
                 string source = _queue.Dequeue();
-                string target = StoreZipJob.OutputPath(source, output, rename);
+                string target = inPlace ? source : StoreZipJob.OutputPath(source, output, rename);
                 if (!_outputs.Add(target))
                 {
                     // Two sources with the same name would write the same file
@@ -158,7 +202,9 @@ public partial class MainWindow : Window
                 ShowStatus();
                 try
                 {
-                    Finish(source, await Task.Run(() => StoreZipJob.ConvertOne(source, output, rename, token), token));
+                    Finish(source, await Task.Run(() => inPlace
+                        ? StoreZipJob.ConvertInPlace(source, token)
+                        : StoreZipJob.ConvertOne(source, output, rename, token), token));
                 }
                 finally
                 {
@@ -171,7 +217,8 @@ public partial class MainWindow : Window
         {
             int workers = Math.Clamp(_settings.Workers, 1, 16);
             await Task.WhenAll(Enumerable.Range(0, workers).Select(_ => Worker()));
-            StatusText.Text = $"Done: {_done - _failed} of {_done} converted" + (_failed > 0 ? $", {_failed} failed." : ".") + $"  Output: {output}";
+            StatusText.Text = $"Done: {_done - _failed} of {_done} converted" + (_failed > 0 ? $", {_failed} failed." : ".") +
+                              (inPlace ? (_unchanged > 0 ? $"  {_unchanged} already were StoreZips." : "") + "  (in place)" : $"  Output: {output}");
         }
         catch (OperationCanceledException)
         {
@@ -184,7 +231,7 @@ public partial class MainWindow : Window
             CancelButton.IsEnabled = false;
             ClearButton.IsEnabled = true;
             _running = false;
-            _done = _total = _failed = 0;
+            _done = _total = _failed = _unchanged = 0;
             _active.Clear();
             _outputs.Clear();
         }
@@ -199,7 +246,12 @@ public partial class MainWindow : Window
     private void Finish(string source, StoreZipJobResult r)
     {
         _done++;
-        if (r.Error is null)
+        if (r.Unchanged)
+        {
+            _unchanged++;
+            _rows.Add(new ResultRow("=", Brush("OkBrush"), $"{Path.GetFileName(r.Output)}  already a StoreZip — left as it was"));
+        }
+        else if (r.Error is null)
         {
             _rows.Add(new ResultRow("✓", Brush("OkBrush"),
                 $"{Path.GetFileName(r.Output)}  {r.Result!.Members.Count} files  {r.Result.Size:N0} bytes  crc {r.Result.CrcHex}  sha1 {r.Result.Sha1}"));

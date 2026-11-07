@@ -38,6 +38,16 @@ How many zips are converted at the same time. 2 suits most PCs. Use 1 when
 the zips are on a NAS or a slow hard drive, or more on a fast SSD. The output
 is the same whatever the setting.
 
+CONVERT IN PLACE
+
+Tick "Convert in place" to rebuild an existing folder of zips where it is.
+Every .zip and .zip_ in the folder you drop (and its subfolders) is replaced
+by its StoreZip, with the same name and folder; there's no output folder and
+the .zip_ option doesn't apply. The app asks first. Each StoreZip is written
+beside its zip and read back before the zip is replaced. A damaged or
+unreadable zip is reported and kept as it was, and zips that already are
+StoreZips are left alone, so running it again changes nothing.
+
 FIRST RUN
 
 Windows: run EggmansStoreZip.exe. Windows SmartScreen may warn about an
@@ -53,5 +63,5 @@ macOS: extract the tar.gz and move "Eggman's StoreZip.app" to Applications.
 
   Then open it normally.
 
-Settings (output folder, the .zip_ option, Workers) are remembered in your
+Settings (output folder, the .zip_ option, Workers, Convert in place) are remembered in your
 user settings folder. StoreZip-Format.md, included here, is the exact format.
